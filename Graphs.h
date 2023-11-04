@@ -9,10 +9,7 @@
 
 class Graphs {
 private:
-  int numNodes1;
-  int numEdges1;
-  int numNodes2;
-  int numEdges2;
+  int numNodes1, numEdges1, numNodes2, numEdges2, start, end;
 
   // vector de listas ligadas de pares (vertice, peso)
   std::vector<std::list<std::pair<int, int>>> adjListGraph1;
