@@ -59,6 +59,8 @@ void Graphs::readGraph(std::istream &input) {
       split(line, res);
       numNodes2 = res[0];
       numEdges2 = res[1];
+      start = res[2];
+      end = res[3];
       adjListGraph2.resize(numNodes2);
 
       for (int k = 0; k < numNodes2; k++) {
