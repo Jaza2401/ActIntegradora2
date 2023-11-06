@@ -7,6 +7,8 @@ Graphs::Graphs() {
   numEdges1 = 0;
   numNodes2 = 0;
   numEdges2 = 0;
+  start = 0;
+  end = 0;
 }
 
 Graphs::~Graphs() {
@@ -16,6 +18,8 @@ Graphs::~Graphs() {
   numEdges1 = 0;
   numNodes2 = 0;
   numEdges2 = 0;
+  start = 0;
+  end = 0;
 }
 
 void Graphs::split(std::string line, std::vector<int> &res) {
@@ -123,3 +127,66 @@ void Graphs::print() {
     std::cout << std::endl;
   }
 }
+
+//El codigo se baso en el proporcionado por GeeksforGeeks y ademas de videos como apoyo
+//de la misma logica
+
+void Graphs::KruskalMST() {
+  std::vector<std::pair<int, std::pair<int, int>>> edges;
+  int contador = 0;
+
+  for (int u = 0; u < numNodes1; u++) {
+    for (const auto &edge : adjListGraph1[u]) {
+      int v = edge.first;
+      int weight = edge.second;
+      edges.push_back({weight, {u, v}});
+    }
+  }
+
+  // Ordenar el vector de aristas por peso en orden ascendente
+  // Por si solo el contenedor sort ya tiene una complejidad O(nlogn)
+  std::sort(edges.begin(), edges.end());
+
+  std::vector<int> parent(numNodes1);
+  for (int i = 0; i < numNodes1; i++) {
+    parent[i] = i;
+  }
+
+  std::vector<std::pair<int, std::pair<int, int>>> mst;
+
+  for (const auto &edge : edges) {
+    int weight = edge.first;
+    int u = edge.second.first;
+    int v = edge.second.second;
+
+    // Comprobar si agregar esta arista crea un ciclo en el MST actual
+    int uParent = u;
+    int vParent = v;
+
+    while (parent[uParent] != uParent) {
+      uParent = parent[uParent];
+    }
+
+    while (parent[vParent] != vParent) {
+      vParent = parent[vParent];
+    }
+
+    if (uParent != vParent) {
+      mst.push_back({weight, {u, v}});
+      contador += weight;
+      parent[uParent] = vParent;
+    }
+  }
+
+  // Imprimir el MST resultante
+  std::cout << "Problema 1" << std::endl;
+  std::cout << "MST edges:" << std::endl;
+  for (const auto &edge : mst) {
+    int weight = edge.first;
+    int u = edge.second.first;
+    int v = edge.second.second;
+    std::cout << "(" << u + 1 << ", " << v + 1 << ", " << weight << ")" << std::endl;
+  }
+  std::cout << "MST cost: " << contador << std::endl;
+}
+
