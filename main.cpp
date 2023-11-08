@@ -30,7 +30,9 @@ int main() {
 
   Graphs g1;
   g1.readGraph(inputInfo);
-  g1.print();
+  // g1.print();
+  g1.KruskalMST();
+  g1.DinicsMaxFlow();
 
   return 0;
 }
