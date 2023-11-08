@@ -234,6 +234,7 @@ void Graphs::TSP() {
     int optCost = 10000000;
     int ca;
     int neoLb;
+    std::vector<int> neoPath;
     std::vector<int> optPath;
 
     int initialCost = calculateLB(adjListGraph1, {0}, numNodes1);
@@ -257,63 +258,52 @@ void Graphs::TSP() {
 
         if (currNode.lb <= optCost){
 
-            if (currNode.path.size() == numNodes1){
+            std::list<std::pair<int, int>> g = adjListGraph1[currNode.path.back()];
+            std::list<std::pair<int, int>>::iterator it;
+            for (it = g.begin(); it != g.end(); ++it) {
+                std::pair<int, int> par = *it;
 
-                std::list<std::pair<int, int>> g = adjListGraph1[currNode.path.back()];
-                std::list<std::pair<int, int>>::iterator it;
-                for (it = g.begin(); it != g.end(); ++it) {
-                    std::pair<int, int> par = *it;
+                if (!visited(par.first, currNode.path)) {
 
-                    if (par.first == currNode.path[0]){
-                        currNode.path.push_back(currNode.path[0]);
-                        ca = calculateCA(currNode.path, adjListGraph1);
-                        if (ca < optCost){
-                            //std::cout << "ca: " << ca <<std::endl;
-                            optCost = ca;
-                            optPath = currNode.path;
-                            /*std::cout << "Path: ";
-                            for (int i = 0; i < optPath.size(); i++){
-                                std::cout << optPath[i] + 1 << " ";
+                    neoPath = currNode.path;
+                    neoPath.push_back(par.first);
+                    neoLb = calculateLB(adjListGraph1, neoPath, numNodes1);
+                    nodo neo({neoLb, par.first, neoPath});
+
+                    if (neoPath.size() == numNodes1){
+
+
+                        std::list<std::pair<int, int>> g = adjListGraph1[neoPath.back()];
+                        std::list<std::pair<int, int>>::iterator it;
+                        for (it = g.begin(); it != g.end(); ++it) {
+                            std::pair<int, int> par = *it;
+
+                            if (par.first == neoPath[0]){
+                                neoPath.push_back(neoPath[0]);
+                                ca = calculateCA(neoPath, adjListGraph1);
+                                if (ca < optCost){
+                                    //std::cout << "ca: " << ca <<std::endl;
+                                    optCost = ca;
+                                    optPath = neoPath;
+                                    /*std::cout << "Path: ";
+                                    for (int i = 0; i < optPath.size(); i++){
+                                        std::cout << optPath[i] + 1 << " ";
+                                    }
+                                    std::cout << std::endl;
+                                    std::cout << std::endl;*/
+                                }
+
                             }
-                            std::cout << std::endl;
-                            std::cout << std::endl;*/
-                        }
 
+                        }
                     }
-
-                }
-            }
-            else {
-
-                std::list<std::pair<int, int>> g = adjListGraph1[currNode.path.back()];
-                std::list<std::pair<int, int>>::iterator it;
-                for (it = g.begin(); it != g.end(); ++it) {
-                    std::pair<int, int> par = *it;
-
-                    if (!visited(par.first, currNode.path)){
-
-                        currNode.path.push_back(par.first);
-                        neoLb = calculateLB(adjListGraph1, currNode.path, numNodes1);
-                        nodo neo({neoLb,par.first, currNode.path});
-
-                        /*std::cout << "LB: " << neoLb << std::endl;
-
-                        std::cout << "index: " << par.first << std::endl;
-
-                        std::cout << "Path: ";
-                        for (int i = 0; i < currNode.path.size(); i++){
-                            std::cout << currNode.path[i] << " ";
-                        }
-                        std::cout << std::endl;
-                        std::cout << std::endl;
-                        */
+                    else {
                         pq.push({neo});
-
-                        currNode.path.pop_back();
-
                     }
+
                 }
             }
+
 
         }
         else {
@@ -330,5 +320,7 @@ void Graphs::TSP() {
     }
     std::cout << std::endl;
     std::cout << std::endl;
+
+
 
 }
