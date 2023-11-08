@@ -63,8 +63,8 @@ void Graphs::readGraph(std::istream &input) {
       split(line, res);
       numNodes2 = res[0];
       numEdges2 = res[1];
-      start = res[2];
-      end = res[3];
+      start = res[2] - 1;
+      end = res[3] - 1;
       adjListGraph2.resize(numNodes2);
 
       for (int k = 0; k < numNodes2; k++) {
@@ -128,8 +128,9 @@ void Graphs::print() {
   }
 }
 
-//El codigo se baso en el proporcionado por GeeksforGeeks y ademas de videos como apoyo
-//de la misma logica
+// El codigo se baso en el proporcionado por GeeksforGeeks y ademas de videos
+// como apoyo de la misma logica La complejidad del algoritmo se puede entender
+// como O(E*log(E)) donde E es el numero de arcos del grafo.
 
 void Graphs::KruskalMST() {
   std::vector<std::pair<int, std::pair<int, int>>> edges;
@@ -144,7 +145,7 @@ void Graphs::KruskalMST() {
   }
 
   // Ordenar el vector de aristas por peso en orden ascendente
-  // Por si solo el contenedor sort ya tiene una complejidad O(nlogn)
+  // Por si solo el contenedor sort ya tiene una complejidad O(E*log(E))
   std::sort(edges.begin(), edges.end());
 
   std::vector<int> parent(numNodes1);
@@ -179,14 +180,110 @@ void Graphs::KruskalMST() {
   }
 
   // Imprimir el MST resultante
-  std::cout << "Problema 1" << std::endl;
+  std::cout << "Problem 1" << std::endl;
   std::cout << "MST edges:" << std::endl;
   for (const auto &edge : mst) {
     int weight = edge.first;
     int u = edge.second.first;
     int v = edge.second.second;
-    std::cout << "(" << u + 1 << ", " << v + 1 << ", " << weight << ")" << std::endl;
+    std::cout << "(" << u + 1 << ", " << v + 1 << ", " << weight << ")"
+              << std::endl;
   }
   std::cout << "MST cost: " << contador << std::endl;
 }
 
+// La funcion es un bucle que corre O(V + E) veces en el peor de los casos
+// al nivelar los nodos y generar las aristas en el grafo residual, el
+// bucle principal tiene una complejidad de O(V) al igual que la funcion
+// dfs tiene una complejidad de O(V) por la cantidad de veces que puede
+// correr lo que al final nos da una complejidad de O(V*(V + E + E))
+// donde el primer V es el bucle principal, V + E viene del nivelado del
+// grafo y el ultimo E del dfs para darnos de igual manera
+// O(V^2*E)
+
+void Graphs::DinicsMaxFlow() {
+
+  std::vector<std::list<std::pair<int, int>>> residualGraph = adjListGraph2;
+
+  levelGraph.clear();
+  levelGraph.resize(numNodes2);
+  level.clear();
+  level.resize(numNodes2, -1);
+
+  int maxFlow = 0;
+
+  while (true) {
+
+    std::queue<int> q;
+    q.push(start);
+    level[start] = 0;
+
+    while (!q.empty()) {
+      int u = q.front();
+      q.pop();
+
+      for (const auto &neighbor : residualGraph[u]) {
+        int v = neighbor.first;
+        int capacity = neighbor.second;
+
+        if (level[v] < 0 && capacity > 0) {
+          level[v] = level[u] + 1;
+          q.push(v);
+        }
+      }
+    }
+
+    if (level[end] < 0) {
+      break;
+    }
+
+    while (true) {
+      int blockingFlow = dfs(start, INT_MAX, residualGraph);
+
+      if (blockingFlow <= 0) {
+        break;
+      }
+
+      maxFlow += blockingFlow;
+    }
+
+    level.assign(numNodes2, -1);
+  }
+  std::cout << "\nProblem 3" << std::endl;
+  std::cout << "Maximum Flow from " << start + 1 << " to " << end + 1 << ": "
+            << maxFlow << std::endl;
+}
+
+// Por si sola, la funcion dfs que es auxiliar tendria una complejidad
+// de O(V) por el recorrido de los nodos y en el peor de los casos al nivelar
+
+int Graphs::dfs(int u, int minCapacity,
+                std::vector<std::list<std::pair<int, int>>> &rg) {
+  if (u == end) {
+    return minCapacity;
+  }
+
+  for (auto &neighbor : rg[u]) {
+    int v = neighbor.first;
+    int capacity = neighbor.second;
+
+    if (level[v] == level[u] + 1 && capacity > 0) {
+      int blockingFlow = dfs(v, std::min(minCapacity, capacity), rg);
+
+      if (blockingFlow > 0) {
+        neighbor.second -= blockingFlow;
+
+        for (auto &revNeighbor : rg[v]) {
+          if (revNeighbor.first == u) {
+            revNeighbor.second += blockingFlow;
+            break;
+          }
+        }
+
+        return blockingFlow;
+      }
+    }
+  }
+
+  return 0;
+}
