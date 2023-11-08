@@ -6,6 +6,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <queue>
+#include <algorithm>
 
 class Graphs {
 private:
@@ -22,6 +24,7 @@ public:
   ~Graphs();
   void readGraph(std::istream &input);
   void print();
+  void TSP();
 };
 
 #endif // _GRAPHS_H_

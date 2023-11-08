@@ -123,3 +123,212 @@ void Graphs::print() {
     std::cout << std::endl;
   }
 }
+
+struct nodo {
+    int lb;
+    int index;
+    std::vector<int> path;
+};
+
+struct PriorityQueueEntry {
+    nodo piece;
+
+    // Custom comparison function for the priority queue
+    bool operator>(const PriorityQueueEntry& other) const {
+        // Comparison for min-heap, based on the priority
+        return piece.lb > other.piece.lb;
+    }
+};
+
+//Revisa si ha sido visitado
+bool visited(int indice, std::vector<int> visitados){
+
+    std::vector<int>::iterator check = std::find(visitados.begin(),visitados.end(),indice);
+
+    if (check != visitados.end()) {
+        //std::cout << "visited" << std::endl;
+        return true;
+    }
+    else {
+        //std::cout << "not visited" << std::endl;
+        return false;
+    }
+}
+
+//Calcula CA (suma de distancias entre vertices visitados + actual)
+int calculateCA(std::vector<int> visitados, std::vector<std::list<std::pair<int, int>>> adjList){
+
+    int i = 0;
+    int j = 1;
+    int ca = 0;
+
+    while (i < visitados.size() and j < visitados.size()){
+
+        std::list<std::pair<int, int>> g = adjList[visitados[i]];
+        std::list<std::pair<int, int>>::iterator it;
+        for (it = g.begin(); it != g.end(); ++it) {
+            std::pair<int, int> par = *it;
+
+            if (par.first == visitados[j]){
+                ca += par.second;
+
+            }
+
+        }
+        i++;
+        j++;
+
+    }
+    //std::cout << "ca: " << ca << std::endl;
+    return ca;
+}
+
+//Calcula lower bound
+int calculateLB(std::vector<std::list<std::pair<int, int>>> adjList, std::vector<int> visitados, int num){
+
+    int lb = calculateCA(visitados, adjList);
+
+    int lowest = 0;
+
+    for (int u = 0; u < num ; u++) {
+
+        if (u == visitados.back() or !visited(u,visitados)){
+            //std::cout << "node: " << u << std::endl;
+            std::list<std::pair<int, int>> g = adjList[u];
+            std::list<std::pair<int, int>>::iterator it;
+            for (it = g.begin(); it != g.end(); ++it) {
+                std::pair<int, int> par = *it;
+
+                if (par.first == visitados.back() and visitados.size() > 1) {
+                //skip
+                }
+                else if (lowest == 0){
+                    lowest = par.second;
+                    //std::cout <<par.first << " first lowest: " << par.second << std::endl;
+                }
+                else if(lowest > par.second){
+                    lowest = par.second;
+                    //std::cout <<par.first << " lowest: " << par.second << std::endl;
+                }
+
+            }
+
+        }
+        //std::cout << " lb before: " << lb << std::endl;
+        lb += lowest;
+        //std::cout << " lb after: " << lb << std::endl << std::endl;
+        lowest = 0;
+
+    }
+    return lb;
+}
+
+
+
+
+
+void Graphs::TSP() {
+
+    std::priority_queue<PriorityQueueEntry, std::vector<PriorityQueueEntry>, std::greater<PriorityQueueEntry>> pq;
+    int counter = 0;
+    int optCost = 10000000;
+    int ca;
+    int neoLb;
+    std::vector<int> optPath;
+
+    int initialCost = calculateLB(adjListGraph1, {0}, numNodes1);
+
+    //std::cout << initialCost << std::endl;
+
+    nodo inicial({initialCost,0,{0}});
+
+    pq.push({inicial});
+
+    //std::cout << pq.top().piece.lb << std::endl;
+    //pq.pop();
+
+    while (!pq.empty()){
+        counter++;
+        //std::cout << pq.top().piece.lb << std::endl;
+        nodo currNode = pq.top().piece;
+        pq.pop();
+
+
+
+        if (currNode.lb <= optCost){
+
+            if (currNode.path.size() == numNodes1){
+
+                std::list<std::pair<int, int>> g = adjListGraph1[currNode.path.back()];
+                std::list<std::pair<int, int>>::iterator it;
+                for (it = g.begin(); it != g.end(); ++it) {
+                    std::pair<int, int> par = *it;
+
+                    if (par.first == currNode.path[0]){
+                        currNode.path.push_back(currNode.path[0]);
+                        ca = calculateCA(currNode.path, adjListGraph1);
+                        if (ca < optCost){
+                            //std::cout << "ca: " << ca <<std::endl;
+                            optCost = ca;
+                            optPath = currNode.path;
+                            /*std::cout << "Path: ";
+                            for (int i = 0; i < optPath.size(); i++){
+                                std::cout << optPath[i] + 1 << " ";
+                            }
+                            std::cout << std::endl;
+                            std::cout << std::endl;*/
+                        }
+
+                    }
+
+                }
+            }
+            else {
+
+                std::list<std::pair<int, int>> g = adjListGraph1[currNode.path.back()];
+                std::list<std::pair<int, int>>::iterator it;
+                for (it = g.begin(); it != g.end(); ++it) {
+                    std::pair<int, int> par = *it;
+
+                    if (!visited(par.first, currNode.path)){
+
+                        currNode.path.push_back(par.first);
+                        neoLb = calculateLB(adjListGraph1, currNode.path, numNodes1);
+                        nodo neo({neoLb,par.first, currNode.path});
+
+                        /*std::cout << "LB: " << neoLb << std::endl;
+
+                        std::cout << "index: " << par.first << std::endl;
+
+                        std::cout << "Path: ";
+                        for (int i = 0; i < currNode.path.size(); i++){
+                            std::cout << currNode.path[i] << " ";
+                        }
+                        std::cout << std::endl;
+                        std::cout << std::endl;
+                        */
+                        pq.push({neo});
+
+                        currNode.path.pop_back();
+
+                    }
+                }
+            }
+
+        }
+        else {
+
+            pq = {};
+        }
+    }
+    std::cout <<"counter: " << counter << std::endl;
+
+    std::cout << "OptCost: " << optCost << std::endl;
+    std::cout << "Path: ";
+    for (int i = 0; i < optPath.size(); i++){
+        std::cout << optPath[i] + 1 << " ";
+    }
+    std::cout << std::endl;
+    std::cout << std::endl;
+
+}
