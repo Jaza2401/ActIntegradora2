@@ -127,13 +127,17 @@ void Graphs::print() {
 
 }
 
-
+//THIS STRUCT IS WHAT WE ENTER INTO THE PRIORITY QUEUE, GIVING
+//IT THE LOWER BOUND AND THE CURRENT PATH IT HAS TAKEN
 struct nodo {
     int lb;
-
     std::vector<int> path;
 };
 
+
+//THIS IS THE PRIORITY QUEUE, IT HAS NODES ENTER INTO IT AND,
+//IT INSERTS THE NODES BASED ON THE LOWER BOUND THAT IT HAS
+//SO THAT THE MORE PROMISING CHOICES ARE EXPLORED FIRST
 struct PriorityQueueEntry {
     nodo piece;
 
@@ -144,7 +148,10 @@ struct PriorityQueueEntry {
     }
 };
 
-//Revisa si ha sido visitado
+
+
+//THIS FUNCTION RECEIVES A VALUE AND A LIST AND RETURNS A BOOL
+//IF THE VALUE IS INSIDE THE LIST
 bool visited(int indice, std::vector<int> visitados){
 
     std::vector<int>::iterator check = std::find(visitados.begin(),visitados.end(),indice);
@@ -159,13 +166,18 @@ bool visited(int indice, std::vector<int> visitados){
     }
 }
 
-//Calcula CA (suma de distancias entre vertices visitados + actual)
-int calculateCA(std::vector<int> visitados, std::vector<std::list<std::pair<int, int>>> adjList){
 
+
+//THIS FUNCTION CALCULATES THE ACCUMULATED COST OF A PATH, RECEIVING THE
+//LIST OF VISITED INDEXES AND THE ADJLIST.
+int calculateCA(std::vector<int> visitados, std::vector<std::list<std::pair<int, int>>> adjList){
+    //INITIALIZED LOOP VALUES AND INITIAL CA
     int i = 0;
     int j = 1;
     int ca = 0;
 
+    //THIS LOOP GOES FROM PAIR TO PAIR OF INDEXES AND
+    //SUMS THE WEIGHT VALUE BETWEEN THE 2 TO CA
     while (i < visitados.size() and j < visitados.size()){
 
         std::list<std::pair<int, int>> g = adjList[visitados[i]];
@@ -187,15 +199,23 @@ int calculateCA(std::vector<int> visitados, std::vector<std::list<std::pair<int,
     return ca;
 }
 
-//Calcula lower bound
+
+
+//THIS FUNCTION CALCULATES THE LOWER BOUND OF A PATH,
+//RECEIVING THE PATH, ADJLIST AND NUMBER OF NODES
 int calculateLB(std::vector<std::list<std::pair<int, int>>> adjList, std::vector<int> visitados, int num){
 
+    //THE INITIAL VALUE OF LB IS THE CA OF THE CURRENT PATH SINCE THE DISTANCES ARE ALREADY DEFINED,
+    //SO WE INITIALIZE THE LB WITH THE CA OF THE PATH.
     int lb = calculateCA(visitados, adjList);
 
     int lowest = 0;
 
+    //WE LOOP THROUGHOUT THE WHOLE ADJLIST TO FIND THE DISTANCES
     for (int u = 0; u < num ; u++) {
 
+        //SINCE WE ONLY WANT THE DISTANCES FROM NOT VISITED NODES AND FROM THE LAST NODE OF THE PATH,
+        //WE EXCLUDE ALL VISITED EXCEPT THE LAST ONE ON THE PATH
         if (u == visitados.back() or !visited(u,visitados)){
             //std::cout << "node: " << u << std::endl;
             std::list<std::pair<int, int>> g = adjList[u];
@@ -228,9 +248,15 @@ int calculateLB(std::vector<std::list<std::pair<int, int>>> adjList, std::vector
 }
 
 
-
-
-
+/* THIS IS THE ALGORITHM USED TO SOLVE PROBLEM 2
+ * IT IS A TRAVELING SALES PROBLEM ALGORITHM WITH BRANCH AND BOUND
+ * IT HAS A TIME COMPLEXITY OF O(2^N) BECAUSE THE NUMBER OF POSSIBLE PATHS
+ * GROWS EXPONENTIALLY WITH THE NUMBER OF NODES.
+ *
+ * STILL WE SHOULD TAKE INTO ACCOUNT THAT SINCE THIS IS A BRANCH AND BOUND
+ * APPROACH WE COULD SEE A REDUCED COST SINCE WE FOLLOW PATHS WITH BETTER
+ * POSSIBLE VALUES FIRST, GIVING US THE POSSIBILITY OF GETTING TO THE SOLUTION QUICKER.
+ */
 void Graphs::TSP() {
 
     //WE INITIALIZE THE PRIORITY QUEUE
