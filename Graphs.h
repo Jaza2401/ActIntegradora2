@@ -33,6 +33,7 @@ public:
   void KruskalMST();
   void DinicsMaxFlow();
   int dfs(int, int, std::vector<std::list<std::pair<int, int>>> &rg);
+  void TSP();
 };
 
 #endif // _GRAPHS_H_

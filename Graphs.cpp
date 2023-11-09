@@ -287,3 +287,248 @@ int Graphs::dfs(int u, int minCapacity,
 
   return 0;
 }
+
+//THIS STRUCT IS WHAT WE ENTER INTO THE PRIORITY QUEUE, GIVING
+//IT THE LOWER BOUND AND THE CURRENT PATH IT HAS TAKEN
+struct nodo {
+    int lb;
+    std::vector<int> path;
+};
+
+
+//THIS IS THE PRIORITY QUEUE, IT HAS NODES ENTER INTO IT AND,
+//IT INSERTS THE NODES BASED ON THE LOWER BOUND THAT IT HAS
+//SO THAT THE MORE PROMISING CHOICES ARE EXPLORED FIRST
+struct PriorityQueueEntry {
+    nodo piece;
+
+    // Custom comparison function for the priority queue
+    bool operator>(const PriorityQueueEntry& other) const {
+        // Comparison for min-heap, based on the priority
+        return piece.lb > other.piece.lb;
+    }
+};
+
+
+
+//THIS FUNCTION RECEIVES A VALUE AND A LIST AND RETURNS A BOOL
+//IF THE VALUE IS INSIDE THE LIST
+bool visited(int indice, std::vector<int> visitados){
+
+    std::vector<int>::iterator check = std::find(visitados.begin(),visitados.end(),indice);
+
+    if (check != visitados.end()) {
+        //std::cout << "visited" << std::endl;
+        return true;
+    }
+    else {
+        //std::cout << "not visited" << std::endl;
+        return false;
+    }
+}
+
+
+
+//THIS FUNCTION CALCULATES THE ACCUMULATED COST OF A PATH, RECEIVING THE
+//LIST OF VISITED INDEXES AND THE ADJLIST.
+int calculateCA(std::vector<int> visitados, std::vector<std::list<std::pair<int, int>>> adjList){
+    //INITIALIZED LOOP VALUES AND INITIAL CA
+    int i = 0;
+    int j = 1;
+    int ca = 0;
+
+    //THIS LOOP GOES FROM PAIR TO PAIR OF INDEXES AND
+    //SUMS THE WEIGHT VALUE BETWEEN THE 2 TO CA
+    while (i < visitados.size() and j < visitados.size()){
+
+        std::list<std::pair<int, int>> g = adjList[visitados[i]];
+        std::list<std::pair<int, int>>::iterator it;
+        for (it = g.begin(); it != g.end(); ++it) {
+            std::pair<int, int> par = *it;
+
+            if (par.first == visitados[j]){
+                ca += par.second;
+
+            }
+
+        }
+        i++;
+        j++;
+
+    }
+    //std::cout << "ca: " << ca << std::endl;
+    return ca;
+}
+
+
+
+//THIS FUNCTION CALCULATES THE LOWER BOUND OF A PATH,
+//RECEIVING THE PATH, ADJLIST AND NUMBER OF NODES
+int calculateLB(std::vector<std::list<std::pair<int, int>>> adjList, std::vector<int> visitados, int num){
+
+    //THE INITIAL VALUE OF LB IS THE CA OF THE CURRENT PATH SINCE THE DISTANCES ARE ALREADY DEFINED,
+    //SO WE INITIALIZE THE LB WITH THE CA OF THE PATH.
+    int lb = calculateCA(visitados, adjList);
+
+    int lowest = 0;
+
+    //WE LOOP THROUGHOUT THE WHOLE ADJLIST TO FIND THE DISTANCES
+    for (int u = 0; u < num ; u++) {
+
+        //SINCE WE ONLY WANT THE DISTANCES FROM NOT VISITED NODES AND FROM THE LAST NODE OF THE PATH,
+        //WE EXCLUDE ALL VISITED EXCEPT THE LAST ONE ON THE PATH
+        if (u == visitados.back() or !visited(u,visitados)){
+            //std::cout << "node: " << u << std::endl;
+            std::list<std::pair<int, int>> g = adjList[u];
+            std::list<std::pair<int, int>>::iterator it;
+            for (it = g.begin(); it != g.end(); ++it) {
+                std::pair<int, int> par = *it;
+
+                if (par.first == visitados.back() and visitados.size() > 1) {
+                    //skip
+                }
+                else if (lowest == 0){
+                    lowest = par.second;
+                    //std::cout <<par.first << " first lowest: " << par.second << std::endl;
+                }
+                else if(lowest > par.second){
+                    lowest = par.second;
+                    //std::cout <<par.first << " lowest: " << par.second << std::endl;
+                }
+
+            }
+
+        }
+        //std::cout << " lb before: " << lb << std::endl;
+        lb += lowest;
+        //std::cout << " lb after: " << lb << std::endl << std::endl;
+        lowest = 0;
+
+    }
+    return lb;
+}
+
+
+/* THIS IS THE ALGORITHM USED TO SOLVE PROBLEM 2
+ * IT IS A TRAVELING SALES PROBLEM ALGORITHM WITH BRANCH AND BOUND
+ * IT HAS A TIME COMPLEXITY OF O(2^N) BECAUSE THE NUMBER OF POSSIBLE PATHS
+ * GROWS EXPONENTIALLY WITH THE NUMBER OF NODES.
+ *
+ * STILL WE SHOULD TAKE INTO ACCOUNT THAT SINCE THIS IS A BRANCH AND BOUND
+ * APPROACH WE COULD SEE A REDUCED COST SINCE WE FOLLOW PATHS WITH BETTER
+ * POSSIBLE VALUES FIRST, GIVING US THE POSSIBILITY OF GETTING TO THE SOLUTION QUICKER.
+ */
+void Graphs::TSP() {
+
+    //WE INITIALIZE THE PRIORITY QUEUE
+    std::priority_queue<PriorityQueueEntry, std::vector<PriorityQueueEntry>, std::greater<PriorityQueueEntry>> pq;
+
+    //INITIALIZED KEY VARIABLES
+    int optCost = 10000000;
+    int ca;
+    int neoLb;
+    std::vector<int> neoPath;
+    std::vector<int> optPath;
+
+    //WE CALCULATE THE INITIAL POSSIBLE COST
+    int initialCost = calculateLB(adjListGraph1, {0}, numNodes1);
+
+    //WE CREATE THE FIRST NODE AND PUSH IT INTO THE PRIORITY QUEUE
+    nodo inicial({initialCost,{0}});
+
+    pq.push({inicial});
+
+
+    //THIS IS THE MAIN LOOP OF THE CODE, WERE AS LONG AS WE HAVE NODES IN THE PRIORITY QUEUE,
+    //THEN WE STILL HAVE PATHS TO EXPLORE
+    while (!pq.empty()){
+
+        //WE SAVE THE TOP NODE OF THE PRIORITY QUEUE IN A TEMPORARY VARIABLE
+        //AND THEN POP THE NODE FROM THE PRIORITY QUEUE
+        nodo currNode = pq.top().piece;
+        pq.pop();
+
+
+        //WE CHECK IF THE LOWER BOUND OF THE NODE IS LOWER THAN THE CURRENT OPTIMAL
+        //COST, THEN WE SHOULD LOOK INTO IT BECAUSE THERE IS THE POSSIBILITY IT
+        //COULD GIVE US A BETTER OPTIMAL COST
+        if (currNode.lb <= optCost){
+
+            //WE IMPLEMENT A FOR ON THE ADJLIST OF THE INDEX OF THE NODE, WHICH
+            //IS THE LAST INDEX IN THE LIST OF VISITED IN OUR NODE STRUCT.
+            //WE DO THIS TO ACCESS ALL THE PATHS THAT CAN BE TAKEN FROM OUR CURRENT POINT
+            std::list<std::pair<int, int>> g = adjListGraph1[currNode.path.back()];
+            std::list<std::pair<int, int>>::iterator it;
+            for (it = g.begin(); it != g.end(); ++it) {
+                std::pair<int, int> par = *it;
+
+                //WE CHECK IF THE NODE HAS BEEN VISITED BEFORE CHECKING WITH THE
+                //VISITED LIST FROM THE NODE TO AVOID REPEATING NODES
+                if (!visited(par.first, currNode.path)) {
+                    //WE CREATE THE NEW NODE
+                    neoPath = currNode.path;
+                    neoPath.push_back(par.first);
+                    neoLb = calculateLB(adjListGraph1, neoPath, numNodes1);
+                    nodo neo({neoLb, neoPath});
+
+                    //WE CHECK THE SIZE OF VISITED TO SEE IF WE ARE ON THE LAST STEP OF THE PATH
+                    //SINCE THE PATH NEEDS TO GO THROUGH ALL THE NODES 1 TIME.
+                    if (neoPath.size() == numNodes1){
+
+                        //WE CHECK THE ADJLIST OF THE LAST INDEX IN THE PATH TO SEE IF IT CONNECTS
+                        //TO THE FIRST INDEX, SINCE WE NEED IT TO START AND END IN THE SAME POINT
+                        //FOR THE PATH TO BE ELIGIBLE
+                        std::list<std::pair<int, int>> g = adjListGraph1[neoPath.back()];
+                        std::list<std::pair<int, int>>::iterator it;
+                        for (it = g.begin(); it != g.end(); ++it) {
+                            std::pair<int, int> par = *it;
+
+                            //CHECK IF FIRST INDEX IS CONNECTED TO THE LAST ONE
+                            if (par.first == neoPath[0]){
+                                neoPath.push_back(neoPath[0]);
+                                //WE CALCULATE THE ACTUAL ACCUMULATED COST OF THIS PATH
+                                ca = calculateCA(neoPath, adjListGraph1);
+                                //WE UPDATE THE OPTIMAL COST AND PATH IF THE CA IS LOWER THAN THE
+                                //OPTIMAL COST, GIVING US A BETTER PATH.
+                                if (ca < optCost){
+
+                                    optCost = ca;
+                                    optPath = neoPath;
+
+                                }
+
+                            }
+
+                        }
+                    }
+                        //WE PUSH THE NEW NODE TO THE PRIORITY QUEUE TO EXPLORE ITS REMAINING
+                        //CHILDRENS LATER
+                    else {
+                        pq.push({neo});
+                    }
+
+                }
+            }
+
+
+        }
+            //IN THIS CASE IF THE VALUE POPPED FROM THE PRIORITY QUEUE IS NOT LOWER THAN OPTIMAL COST,
+            //THEN ALL THE REMAINING NODES INSIDE ARE HIGHER AND SHOULDNT BE EXPLORED ANYMORE SINCE WE WONT
+            //GET A BETTER VALUE, SO WE EMPTY THE PRIORITY QUEUE.
+        else {
+
+            pq = {};
+        }
+    }
+
+    //PRINTING THE FINAL RESULT
+    std::cout << "Path: " << std::endl;
+    for (int i = 0; i < optPath.size(); i++){
+        std::cout << optPath[i] + 1 << " ";
+    }
+    std::cout << std::endl;
+    std::cout << "Optimal cost: " << optCost << std::endl;
+
+
+
+}

@@ -25,14 +25,20 @@ Ejecucion:
 using namespace std;
 
 int main() {
-  stringstream inputInfo;
-  inputInfo << cin.rdbuf();
+    stringstream inputInfo;
+    inputInfo << cin.rdbuf();
 
-  Graphs g1;
-  g1.readGraph(inputInfo);
-  // g1.print();
-  g1.KruskalMST();
-  g1.DinicsMaxFlow();
+    Graphs g1;
+    g1.readGraph(inputInfo);
+    // g1.print();
+    g1.KruskalMST();
+
+    std::cout << std::endl;
+    std::cout << "Problema 2" << std::endl;
+    g1.TSP();
+
+    g1.DinicsMaxFlow();
+
 
   return 0;
 }
