@@ -31,6 +31,7 @@ int main() {
   Graphs g1;
   g1.readGraph(inputInfo);
   g1.print();
+  std::cout << "Problem 2" <<  std::endl;
   g1.TSP();
 
   return 0;
